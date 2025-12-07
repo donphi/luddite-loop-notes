@@ -1,1 +1,49 @@
+# Environment and secrets
 .env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+ENV/
+
+# IDE and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+output_organized/
+output_final/
+
+# Docker
+.docker/
+
+# Build artifacts
+dist/
+build/
+
+# Backup files
+*.bak
+*.backup

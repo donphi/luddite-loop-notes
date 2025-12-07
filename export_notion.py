@@ -85,13 +85,13 @@ class NotionExporter:
                     str(self.separate_child_pages).lower()
                 ]
                 
-                # Run the Node.js script
+                # Run the Node.js script with extended timeout for large pages
                 result = subprocess.run(
                     args,
                     capture_output=True,
                     text=True,
                     check=False,
-                    timeout=30  # Add timeout to prevent hanging
+                    timeout=60  # Extended timeout for large pages
                 )
                 
                 # Parse the result
@@ -123,6 +123,8 @@ class NotionExporter:
             
             return all_results
                 
+        except subprocess.TimeoutExpired:
+            return {'success': False, 'error': 'Export timed out - page may be too large'}
         except Exception as e:
             return {'success': False, 'error': str(e)}
     

@@ -34,25 +34,6 @@ git push                          # Pushes to luddite-loop repo
 git clone --recursive git@github.com:donphi/luddite-loop.git
 ```
 
-The `--recursive` flag tells git to also clone all submodules. Without it, you get the parent repo but the `notes/` folder will be empty.
-
-If already cloned without `--recursive`:
-
-```bash
-git submodule update --init --recursive
-```
-
-This initializes and fetches all submodules after the fact. The `--init` registers submodules defined in `.gitmodules`, and `--recursive` handles any nested submodules (submodules within submodules). Even if you don't have nested submodules now, it's good practice to include it.
-
-### Pulling submodule updates
-
-If this repo was updated elsewhere:
-
-```bash
-cd luddite-loop/
-git submodule update --remote notes
-```
-
 ---
 
 ## Notion to Markdown Exporter
@@ -65,6 +46,30 @@ Automatically scan and export all Notion pages to Markdown with Docker.
 - **Auto .env update** — Automatically updates your .env file with discovered page IDs
 - **Live development** — Change your Python/JS files and they're instantly reflected in Docker
 - **One-command export** — Single script to scan and export everything
+- **Rate limit handling** — Automatic retries with exponential backoff
+- **Export tracking** — Metadata and history for each export run
+- **Unified CLI** — Single command-line interface for all operations
+
+### Package Versions
+
+| Package | Version | Notes |
+|---------|---------|-------|
+| `@notionhq/client` | `^5.4.0` | Notion SDK v5.x |
+| `notion-to-md` | `^3.1.2` | Stable markdown converter |
+| Node.js | `20.x LTS` | In Docker |
+| Python | `3.12` | In Docker |
+| **API Version** | `2025-09-03` | Multi-source databases support |
+
+### API 2025-09-03 Compliance
+
+This exporter is updated for Notion API version `2025-09-03` which introduces:
+
+- **Multi-source databases**: A database can now contain multiple data sources
+- **New endpoints**: `dataSources.query()` replaces `databases.query()` for querying
+- **New parent types**: Pages can have `data_source_id` parents
+- **Search changes**: Filter uses `data_source` instead of `database`
+
+The code includes fallbacks for backwards compatibility with older API versions.
 
 ---
 
@@ -83,8 +88,16 @@ Get your integration token from: https://www.notion.so/my-integrations
 
 #### 2. Run the automatic scanner & exporter
 
+**Option A: Using the shell script (recommended)**
 ```bash
-./run.sh
+./run.sh              # Cleans output/, then scans + exports (default)
+./run.sh --no-clean   # Keeps existing files, only updates/adds
+```
+
+**Option B: Using the Python CLI**
+```bash
+python notion_cli.py full          # Scan + Export
+python notion_cli.py full --clean  # Clean output first, then scan + export
 ```
 
 This will:
@@ -95,6 +108,45 @@ This will:
 
 ---
 
+### CLI Commands
+
+The `notion_cli.py` provides a unified interface:
+
+```bash
+# Scan for page IDs only
+python notion_cli.py scan
+
+# Export pages to markdown
+python notion_cli.py export
+python notion_cli.py export --clean        # Delete output/ first, then export
+python notion_cli.py export --scan-first   # Scan for new pages before export
+
+# Full workflow (scan + export)
+python notion_cli.py full
+python notion_cli.py full --clean          # Fresh export: delete output/, scan, export
+
+# Check export status and history
+python notion_cli.py status
+
+# Clean output directory
+python notion_cli.py clean                 # Delete all files in output/ (with confirmation)
+python notion_cli.py clean --yes           # Delete without confirmation prompt
+```
+
+#### What does `--clean` do?
+
+The `--clean` flag **deletes the entire `output/` directory** before running the export. This ensures you get a fresh export without any stale files from previous runs.
+
+**When to use `--clean`:**
+- After reorganizing pages in Notion
+- When pages have been deleted in Notion
+- To remove orphaned/renamed files
+- For a guaranteed fresh start
+
+**Without `--clean`:** Existing files are overwritten, but deleted/renamed pages in Notion will leave orphan files behind.
+
+---
+
 ### How It Works
 
 #### File Structure
@@ -102,8 +154,12 @@ This will:
 | File | Purpose |
 |------|---------|
 | `run.sh` | Main script that runs everything automatically |
+| `notion_cli.py` | Unified CLI for all operations |
 | `get_page_ids.py` | Scans Notion for page IDs and updates .env |
 | `export_notion.py` | Exports pages to markdown |
+| `notion_utils.js` | Shared utilities (retry logic, rate limiting) |
+| `notion_export.js` | Node.js markdown converter |
+| `get_page_ids.js` | Node.js page scanner |
 | `docker-compose.yml` | Docker setup with live file mounting |
 | `output/` | Where your markdown files are saved |
 
@@ -114,6 +170,7 @@ All source files are mounted as volumes in Docker, so you can edit:
 - `export_notion.py`
 - `notion_export.js`
 - `get_page_ids.js`
+- `notion_utils.js`
 
 Changes are reflected immediately without rebuilding.
 
@@ -132,6 +189,9 @@ docker-compose run --rm notion-export python export_notion.py
 
 # Build the Docker image
 docker-compose build
+
+# Rebuild from scratch (after package updates)
+docker-compose build --no-cache
 ```
 
 ---
@@ -146,6 +206,21 @@ docker-compose build
 | `SEPARATE_CHILD_PAGES` | Save child pages as separate files (default: true) |
 | `RECURSIVE` | Scan child pages recursively (default: true) |
 | `AUTO_EXPORT` | Auto-export after scanning (default: false) |
+| `OUTPUT_DIR` | Output directory for markdown files |
+
+---
+
+### Export Metadata
+
+Each export creates a `.export_metadata.json` file in the output directory with:
+- Last export timestamp
+- Number of pages exported
+- Export history (last 10 runs)
+
+Check status with:
+```bash
+python notion_cli.py status
+```
 
 ---
 
@@ -157,3 +232,13 @@ docker-compose build
 | Docker not found | Install Docker and Docker Compose |
 | Page scan fails | Make sure your integration has access to the pages |
 | No output files | Check Docker logs with `docker-compose logs` |
+| Rate limiting | Built-in retry with backoff handles this automatically |
+| Timeout errors | Large pages may need more time; CLI has 10min timeout |
+
+### After Updating Packages
+
+If you've updated `package.json`, rebuild the Docker image:
+
+```bash
+docker-compose build --no-cache
+```

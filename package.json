@@ -1,9 +1,19 @@
 {
   "name": "notion-to-markdown-export",
-  "version": "1.0.0",
-  "description": "Export Notion pages to Markdown",
+  "version": "2.0.0",
+  "description": "Export Notion pages to Markdown with hierarchical structure preservation",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
-    "@notionhq/client": "^2.2.14",
-    "notion-to-md": "^3.1.1"
+    "@notionhq/client": "^5.4.0",
+    "notion-to-md": "^3.1.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "export": "node notion_export.js",
+    "scan": "node get_page_ids.js",
+    "fix-emoji": "node fix_emoji_display.js"
   }
 }

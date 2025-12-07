@@ -1,6 +1,8 @@
 services:
   notion-export:
     build: .
+    # Run as current user so files are owned by you, not root
+    user: "${DOCKER_UID:-1000}:${DOCKER_GID:-1000}"
     environment:
       - NOTION_TOKEN=${NOTION_TOKEN}
       - NOTION_PAGE_IDS=${NOTION_PAGE_IDS:-${NOTION_PAGE_ID}}
@@ -17,6 +19,8 @@ services:
       - ./export_notion.py:/app/export_notion.py:ro
       - ./notion_export.js:/app/notion_export.js:ro
       - ./get_page_ids.js:/app/get_page_ids.js:ro
+      - ./notion_utils.js:/app/notion_utils.js:ro
+      - ./notion_cli.py:/app/notion_cli.py:ro
       # Mount .env for live updates
       - ./.env:/app/.env
       # Mount current directory for writing found_page_ids.txt

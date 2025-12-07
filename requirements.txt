@@ -1,1 +1,2 @@
-python-dotenv==1.0.0
+# Python dependencies for Notion export
+python-dotenv==1.0.1

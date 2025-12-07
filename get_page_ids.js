@@ -13,10 +13,14 @@ if (!NOTION_TOKEN || !PARENT_PAGE_ID) {
   process.exit(1);
 }
 
-// Initialize Notion client
+// Initialize Notion client with API version 2025-09-03
 const notion = new Client({
   auth: NOTION_TOKEN,
+  notionVersion: '2025-09-03', // Required for @notionhq/client v5.x
 });
+
+// Rate limiting helper to avoid API throttling
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Store all found page IDs
 const pageIds = new Set();
@@ -42,6 +46,76 @@ async function getPageTitle(pageId) {
     return 'Untitled';
   } catch (error) {
     return 'Untitled';
+  }
+}
+
+/**
+ * Get data source IDs from a database
+ * API 2025-09-03: Databases now contain multiple data sources
+ */
+async function getDataSourcesFromDatabase(databaseId) {
+  try {
+    const database = await notion.databases.retrieve({ database_id: databaseId });
+    // API 2025-09-03 returns data_sources array
+    if (database.data_sources && database.data_sources.length > 0) {
+      return database.data_sources.map(ds => ({
+        id: ds.id,
+        name: ds.name || 'Untitled'
+      }));
+    }
+    // Fallback for backwards compatibility - use database ID as data source ID
+    return [{ id: databaseId, name: database.title?.[0]?.plain_text || 'Untitled' }];
+  } catch (error) {
+    console.error(`Error getting data sources for ${databaseId}: ${error.message}`);
+    return [{ id: databaseId, name: 'Unknown' }];
+  }
+}
+
+/**
+ * Query a data source for pages
+ * API 2025-09-03: Use dataSources.query instead of databases.query
+ */
+async function queryDataSource(dataSourceId) {
+  try {
+    // SDK v5.x with API 2025-09-03 uses dataSources.query
+    const results = [];
+    let cursor = undefined;
+    
+    do {
+      const response = await notion.dataSources.query({
+        data_source_id: dataSourceId,
+        page_size: 100,
+        start_cursor: cursor,
+      });
+      
+      results.push(...response.results);
+      cursor = response.has_more ? response.next_cursor : undefined;
+    } while (cursor);
+    
+    return results;
+  } catch (error) {
+    // Fallback: Try using databases.query for backwards compatibility
+    console.error(`dataSources.query failed, trying databases.query: ${error.message}`);
+    try {
+      const results = [];
+      let cursor = undefined;
+      
+      do {
+        const response = await notion.databases.query({
+          database_id: dataSourceId,
+          page_size: 100,
+          start_cursor: cursor,
+        });
+        
+        results.push(...response.results);
+        cursor = response.has_more ? response.next_cursor : undefined;
+      } while (cursor);
+      
+      return results;
+    } catch (fallbackError) {
+      console.error(`Fallback also failed: ${fallbackError.message}`);
+      return [];
+    }
   }
 }
 
@@ -73,6 +147,9 @@ async function getChildPages(blockId, level = 0) {
             
             console.error(`${'  '.repeat(level)}📄 Found: ${title} (${pageId.substring(0, 8)}...)`);
             
+            // Rate limiting to avoid API throttling
+            await delay(100);
+            
             // Recursively get child pages if enabled
             if (RECURSIVE) {
               await getChildPages(pageId, level + 1);
@@ -84,16 +161,16 @@ async function getChildPages(blockId, level = 0) {
           const dbId = block.id;
           console.error(`${'  '.repeat(level)}📊 Found database: ${dbId.substring(0, 8)}...`);
           
-          // Get all pages in the database
-          let dbCursor = undefined;
-          do {
-            const dbResponse = await notion.databases.query({
-              database_id: dbId,
-              page_size: 100,
-              start_cursor: dbCursor,
-            });
+          // API 2025-09-03: Get data sources from database first
+          const dataSources = await getDataSourcesFromDatabase(dbId);
+          
+          for (const dataSource of dataSources) {
+            console.error(`${'  '.repeat(level)}  📁 Data source: ${dataSource.name}`);
             
-            for (const page of dbResponse.results) {
+            // Query each data source for pages
+            const pages = await queryDataSource(dataSource.id);
+            
+            for (const page of pages) {
               if (!pageIds.has(page.id)) {
                 pageIds.add(page.id);
                 const title = await getPageTitle(page.id);
@@ -103,15 +180,17 @@ async function getChildPages(blockId, level = 0) {
                   title: title,
                   level: level + 1,
                   parent: dbId,
+                  dataSourceId: dataSource.id,
                   fromDatabase: true
                 });
                 
                 console.error(`${'  '.repeat(level + 1)}📄 DB Page: ${title} (${page.id.substring(0, 8)}...)`);
+                
+                // Rate limiting to avoid API throttling
+                await delay(50);
               }
             }
-            
-            dbCursor = dbResponse.has_more ? dbResponse.next_cursor : undefined;
-          } while (dbCursor);
+          }
         }
       }
       
@@ -125,7 +204,7 @@ async function getChildPages(blockId, level = 0) {
 
 async function getAllPageIds() {
   try {
-    console.error('🔍 Scanning for all page IDs...\n');
+    console.error('🔍 Scanning for all page IDs (API 2025-09-03)...\n');
     
     // Add the parent page itself
     const parentTitle = await getPageTitle(PARENT_PAGE_ID);
@@ -147,6 +226,7 @@ async function getAllPageIds() {
       totalPages: pageIds.size,
       parentPage: PARENT_PAGE_ID,
       recursive: RECURSIVE,
+      apiVersion: '2025-09-03',
       pageIds: Array.from(pageIds),
       pages: pageInfo
     };

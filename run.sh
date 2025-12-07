@@ -2,8 +2,10 @@
 
 # Simple script to automatically scan for page IDs and export all Notion pages
 # Uses docker-compose for easy management with live file mounting
-
-sudo rm -rf output
+#
+# Usage:
+#   ./run.sh           # Clean output and run full export (default)
+#   ./run.sh --no-clean # Keep existing output, only update/add files
 
 set -e  # Exit on error
 
@@ -18,6 +20,19 @@ echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}🚀 Notion Auto Scanner & Exporter${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
+
+# Clean output directory unless --no-clean is passed
+if [[ "$1" != "--no-clean" ]]; then
+    if [ -d "output" ]; then
+        echo -e "${YELLOW}🧹 Cleaning output directory...${NC}"
+        rm -rf output 2>/dev/null || sudo rm -rf output  # Fallback to sudo if needed (old files)
+        echo -e "${GREEN}✅ Output directory cleaned${NC}"
+        echo ""
+    fi
+else
+    echo -e "${BLUE}ℹ️  Keeping existing output (--no-clean)${NC}"
+    echo ""
+fi
 
 # Check if .env exists
 if [ ! -f .env ]; then
@@ -60,6 +75,16 @@ fi
 echo -e "${BLUE}Using: $DOCKER_COMPOSE${NC}"
 echo ""
 
+# Export UID/GID so Docker runs as current user (files won't be owned by root)
+export DOCKER_UID=$(id -u)
+export DOCKER_GID=$(id -g)
+
+# Create output directory on HOST with correct ownership before Docker mounts it
+if [ ! -d "output" ]; then
+    mkdir -p output
+    echo -e "${GREEN}✅ Created output directory${NC}"
+fi
+
 # Build the Docker image
 echo -e "${YELLOW}📦 Building Docker image...${NC}"
 $DOCKER_COMPOSE build
@@ -101,7 +126,10 @@ const { NotionToMarkdown } = require('notion-to-md');
 const fs = require('fs').promises;
 const path = require('path');
 
-const notion = new Client({ auth: '$NOTION_TOKEN' });
+const notion = new Client({ 
+  auth: '$NOTION_TOKEN',
+  notionVersion: '2025-09-03' // Required for @notionhq/client v5.x
+});
 const n2m = new NotionToMarkdown({
   notionClient: notion,
   config: {
@@ -240,37 +268,58 @@ function formatPropertyValue(property) {
   }
 }
 
-// Get ALL databases in the workspace dynamically
+// Get ALL data sources in the workspace dynamically
+// API 2025-09-03: Search now returns data_source objects instead of database
 async function getAllDatabases() {
-  console.log('🔍 Discovering ALL databases in your Notion workspace...');
+  console.log('🔍 Discovering ALL data sources in your Notion workspace (API 2025-09-03)...');
   const databases = {};
   
   try {
-    // Search for all databases in the workspace
+    // Search for all data sources in the workspace (API 2025-09-03)
     const response = await notion.search({
       filter: {
         property: 'object',
-        value: 'database'
+        value: 'data_source'  // Changed from 'database' for API 2025-09-03
       },
       page_size: 100
     });
     
-    // Map each database by its ID
-    for (const db of response.results) {
-      const title = db.title[0]?.plain_text || 'Untitled Database';
-      databases[db.id] = title;
-      console.log(\`   Found database: \${title} (ID: \${db.id})\`);
+    // Map each data source by its parent database ID for compatibility
+    for (const ds of response.results) {
+      // API 2025-09-03: data sources have parent.database_id
+      const dbId = ds.parent?.database_id || ds.id;
+      const dataSourceId = ds.id;
+      const title = ds.title?.[0]?.plain_text || 'Untitled Database';
+      // Map by BOTH database_id and data_source_id for compatibility
+      databases[dbId] = title;
+      databases[dataSourceId] = title;  // Pages reference by data_source_id
+      console.log(\`   Found data source: \${title} (ID: \${ds.id})\`);
     }
     
-    console.log(\`\\n📊 Found \${Object.keys(databases).length} databases total\\n\`);
+    console.log(\`\\n📊 Found \${Object.keys(databases).length} data sources total\\n\`);
   } catch (error) {
-    console.log('   ⚠️ Could not get databases:', error.message);
+    // Fallback: try with 'database' filter for backwards compatibility
+    console.log('   ⚠️ data_source search failed, trying database fallback...');
+    try {
+      const response = await notion.search({
+        filter: { property: 'object', value: 'database' },
+        page_size: 100
+      });
+      for (const db of response.results) {
+        const title = db.title?.[0]?.plain_text || 'Untitled Database';
+        databases[db.id] = title;
+      }
+      console.log(\`\\n📊 Found \${Object.keys(databases).length} databases (fallback)\\n\`);
+    } catch (fallbackError) {
+      console.log('   ⚠️ Could not get databases:', fallbackError.message);
+    }
   }
   
   return databases;
 }
 
-// Get page info including parent database and all properties
+// Get page info including parent database/data source and all properties
+// API 2025-09-03: Pages can have data_source_id parent
 async function getPageInfo(pageId) {
   try {
     const page = await notion.pages.retrieve({ page_id: pageId });
@@ -290,19 +339,25 @@ async function getPageInfo(pageId) {
       properties[key] = formatPropertyValue(value);
     }
     
-    // Get parent database ID if it exists
+    // API 2025-09-03: Check for data_source_id first, then database_id
+    const dataSourceId = page.parent.data_source_id || null;
     const parentId = page.parent.database_id || page.parent.page_id || null;
     
-    // If this is a database item, try to get the database schema to determine property order
+    // If this is a database/data source item, try to get the schema
     let databasePropertyOrder = [];
-    if (parentId && page.parent.type === 'database_id') {
+    if (dataSourceId || (parentId && page.parent.type === 'database_id')) {
       try {
-        const database = await notion.databases.retrieve({ database_id: parentId });
-        // The order of properties in the database.properties object reflects the order in the UI
-        databasePropertyOrder = Object.keys(database.properties);
+        // API 2025-09-03: Use dataSources.retrieve for data source schema
+        if (dataSourceId && notion.dataSources) {
+          const dataSource = await notion.dataSources.retrieve({ data_source_id: dataSourceId });
+          databasePropertyOrder = Object.keys(dataSource.properties || {});
+        } else if (parentId) {
+          // Fallback to databases.retrieve
+          const database = await notion.databases.retrieve({ database_id: parentId });
+          databasePropertyOrder = Object.keys(database.properties || {});
+        }
       } catch (e) {
-        console.log(`Could not retrieve database schema for ${parentId}: ${e.message}`);
-        // Fall back to the order from the page properties
+        console.log(\`Could not retrieve schema for \${dataSourceId || parentId}: \${e.message}\`);
         databasePropertyOrder = propertyOrder;
       }
     } else {
@@ -311,8 +366,9 @@ async function getPageInfo(pageId) {
     
     return {
       title,
-      parentId,
+      parentId: dataSourceId || parentId,  // Prefer data source ID
       parentType: page.parent.type,
+      dataSourceId,
       properties,
       propertyOrder: databasePropertyOrder,
       fullPage: page
@@ -570,7 +626,8 @@ async function createDatabaseOverview(dbName, pages) {
   return content;
 }
 
-// Group pages by database for proper ordering
+// Group pages by database/data source for proper ordering
+// API 2025-09-03: Pages can have data_source_id parent type
 async function groupPagesByDatabase(pageIds) {
   const grouped = {};
   const standalone = [];
@@ -579,7 +636,12 @@ async function groupPagesByDatabase(pageIds) {
     const cleanId = pageId.replace(/-/g, '');
     const pageInfo = await getPageInfo(cleanId);
     
-    if (pageInfo.parentType === 'database_id' && pageInfo.parentId) {
+    // API 2025-09-03: Check for both database_id and data_source_id parent types
+    const isFromDatabase = pageInfo.parentType === 'database_id' || 
+                           pageInfo.parentType === 'data_source_id' ||
+                           pageInfo.dataSourceId;
+    
+    if (isFromDatabase && pageInfo.parentId) {
       if (!grouped[pageInfo.parentId]) {
         grouped[pageInfo.parentId] = [];
       }
@@ -659,15 +721,20 @@ async function exportAll() {
       try {
         console.log(\`[\${processed}/\${pageIds.length}] Exporting: \${info.title}\`);
         
-        // Generate numbered filename
-        const filename = \`\${counter.toString().padStart(2, '0')}. \${info.title}.md\`
+        // Use Nr property from Notion if available, otherwise use sequential counter
+        const nrValue = info.properties['Nr'] || info.properties['#'] || info.properties['nr'];
+        const fileNumber = nrValue ? String(nrValue).padStart(2, '0') : counter.toString().padStart(2, '0');
+        
+        // Generate numbered filename using Notion's Nr value
+        const filename = \`\${fileNumber}. \${info.title}.md\`
           .replace(/[^a-zA-Z0-9 .-]/g, '')
           .trim();
         
         const outputPath = path.join(folderPath, filename);
         
-        // Create custom formatted markdown
-        const content = await createCustomMarkdown(id, info, dbName, counter);
+        // Create custom formatted markdown (use Nr for entry number too)
+        const entryNumber = nrValue || counter;
+        const content = await createCustomMarkdown(id, info, dbName, entryNumber);
         
         // Save the content with explicit UTF-8 encoding to preserve emojis
         await fs.writeFile(outputPath, content, 'utf8');
@@ -728,7 +795,7 @@ async function exportAll() {
   // List the created structure
   for (const folder of createdFolders) {
     const folderName = path.basename(folder);
-    console.log(\`   📁 \${folderName}/ (with _Overview.md)\`);
+    console.log('   📁 ' + folderName + '/ [with _Overview.md]');
   }
 }
 

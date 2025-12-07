@@ -17,12 +17,20 @@ if (!NOTION_TOKEN || !NOTION_PAGE_IDS || NOTION_PAGE_IDS.length === 0) {
   process.exit(1);
 }
 
-// Initialize Notion client
+// Initialize Notion client with API version 2025-09-03
+// See: https://developers.notion.com/reference/versioning
 const notion = new Client({
   auth: NOTION_TOKEN,
+  notionVersion: '2025-09-03', // Required for @notionhq/client v5.x
+  timeoutMs: 60000,
 });
 
+// Rate limiting helper to avoid API throttling
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 // Initialize NotionToMarkdown with config
+// Note: notion-to-md v3.x uses the Notion client internally
+// If you encounter issues, check for notion-to-md updates for API 2025-09-03 support
 const n2m = new NotionToMarkdown({ 
   notionClient: notion,
   config: {
