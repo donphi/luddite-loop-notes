@@ -1,0 +1,27 @@
+services:
+  notion-export:
+    build: .
+    environment:
+      - NOTION_TOKEN=${NOTION_TOKEN}
+      - NOTION_PAGE_IDS=${NOTION_PAGE_IDS:-${NOTION_PAGE_ID}}
+      - NOTION_PAGE_ID=${NOTION_PAGE_ID:-${NOTION_PAGE_IDS}}  # Fallback for compatibility
+      - OUTPUT_DIR=/app/output
+      - SEPARATE_CHILD_PAGES=${SEPARATE_CHILD_PAGES:-true}
+      - AUTO_EXPORT=${AUTO_EXPORT:-false}
+      - RECURSIVE=${RECURSIVE:-true}
+    volumes:
+      # Output directory
+      - ./output:/app/output
+      # Mount source files for live development - changes will be reflected immediately
+      - ./get_page_ids.py:/app/get_page_ids.py:ro
+      - ./export_notion.py:/app/export_notion.py:ro
+      - ./notion_export.js:/app/notion_export.js:ro
+      - ./get_page_ids.js:/app/get_page_ids.js:ro
+      # Mount .env for live updates
+      - ./.env:/app/.env
+      # Mount current directory for writing found_page_ids.txt
+      - ./:/app/host
+    working_dir: /app
+    container_name: notion-to-markdown
+    # Default command - can be overridden
+    command: python export_notion.py

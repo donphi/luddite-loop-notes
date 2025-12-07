@@ -1,0 +1,235 @@
+# Found 76 pages from parent: 24db39f0429381238f5ac840a9b16e09
+# Recursive scan: True
+
+# For .env file:
+NOTION_PAGE_IDS=24db39f0429381238f5ac840a9b16e09,24db39f0-4293-811e-b707-ebcf69a2f3b8,253b39f0-4293-8038-8ab4-d91495aa63c2,253b39f0-4293-8068-950f-d36f6fab4816,253b39f0-4293-80a8-bdd4-e37ae1ff8afd,253b39f0-4293-80b3-af36-d470b92804d6,253b39f0-4293-8004-85aa-f46cbd5e9d8b,252b39f0-4293-8024-b8af-d25a7d0d029a,251b39f0-4293-804a-8c87-dcdb7ab22c41,251b39f0-4293-8024-94e6-f8fbcfcc7118,251b39f0-4293-80de-9fb8-e7abd164f9ad,24fb39f0-4293-80d3-9988-d5bc4e9304a0,24eb39f0-4293-8082-a0f0-f6f9535c087b,24eb39f0-4293-80d4-9d0b-e0c7b0bf32bc,24eb39f0-4293-8016-8966-f8b7797e4ff5,24eb39f0-4293-802f-87bb-e829e0596d58,24fb39f0-4293-8086-95e5-ecad1d455868,24eb39f0-4293-80ec-8900-df222b6652a4,24eb39f0-4293-805b-8e95-e65e3b35efef,24db39f0-4293-8147-9858-d10a0c6fcb66,24db39f0-4293-8173-a4c2-fca1952b0e0f,24db39f0-4293-810c-8c77-ff2103f1b8e3,253b39f0-4293-80c5-b8b0-ea8e94f3d212,251b39f0-4293-8078-93dc-e34a295787af,251b39f0-4293-808f-b92f-cb9ad6e6a632,251b39f0-4293-80b7-85b9-cf1c7a56a638,24fb39f0-4293-806f-83f0-e5ad2da28b37,24fb39f0-4293-8049-af56-c7f88863fafa,24eb39f0-4293-80ab-bdaf-fba7e46fd646,24eb39f0-4293-802e-80c4-f0f8efb099bc,24db39f0-4293-81c8-a841-edbbd6f5e0d3,24db39f0-4293-813d-88cb-cdedfb49035d,24db39f0-4293-8166-af9d-f959c3a7c708,24db39f0-4293-812c-861f-e8f447464a11,24db39f0-4293-81dd-a757-d30fb181f30b,250b39f0-4293-80ae-9899-cd935fd81373,250b39f0-4293-8006-bd90-e1737ab304b7,24fb39f0-4293-8011-bafd-e6fb827a7f51,24fb39f0-4293-8018-a83c-cfc3aaf39b92,24eb39f0-4293-80d0-bfcb-cb317fc25839,24eb39f0-4293-80da-8ba4-dfc4099480f9,24eb39f0-4293-8058-ab1c-fc3e083ba2c5,24eb39f0-4293-80d3-b4c5-d85912a2e6bb,24eb39f0-4293-80f8-818a-d8900024a81b,24db39f0-4293-8177-ac37-e7fc416193b5,24db39f0-4293-8156-a94f-fc184e5ad194,24db39f0-4293-81cd-81f0-cff67f38fe64,24db39f0-4293-8152-9056-c76a8e81a6ad,24db39f0-4293-81ec-8476-d7aebe1a0425,24db39f0-4293-8159-8dbc-cc72bd7201ba,24db39f0-4293-81ce-8629-e1aa48f8f229,24db39f0-4293-81e4-bf61-eef940837246,24db39f0-4293-81cb-b919-c2cf136569b3,24db39f0-4293-81bb-83d3-ceb2a1259936,24db39f0-4293-81ad-ab78-e042d8b3d195,24db39f0-4293-81ee-93b7-e8612de9ce75,24db39f0-4293-81e4-af4b-cb1fa5fa1c4f,24db39f0-4293-8114-8ae6-c26a384f17a4,24db39f0-4293-81e6-b7c1-c1d88753580d,24db39f0-4293-81da-8c9b-cf2ea29be550,24db39f0-4293-8104-bf22-dc1d27541f6c,24eb39f0-4293-80d0-abdb-d90537f63c88,24eb39f0-4293-80c4-87af-da730bcabcb2,24eb39f0-4293-80a4-b6e6-d05bd1825fd9,24eb39f0-4293-80b5-bb47-e8e0d4f1b93b,24db39f0-4293-81e0-9c04-e199eb136993,24db39f0-4293-81a1-aea5-eeb8b6c9ab0c,24db39f0-4293-81f9-bd92-cd02a89ee83b,24db39f0-4293-811a-a260-c48f1dd1d0d5,24fb39f0-4293-81a4-a598-d81e8521bb28,24fb39f0-4293-8112-9dc8-e51cff3e44ae,24fb39f0-4293-818d-a04b-e36a0e92c8df,24fb39f0-4293-81fa-a07c-f76ec941ac5b,24fb39f0-4293-812e-bf8b-c72d58ebde25,24fb39f0-4293-8003-bf0c-cb88c40f6fe6,24db39f0-4293-8118-99b4-cd413ebc3361
+
+# Individual page IDs:
+# MSc Project Hub - Donald Philp
+24db39f0429381238f5ac840a9b16e09
+
+# Databases
+24db39f0-4293-811e-b707-ebcf69a2f3b8
+
+# Document Chunk Evolution
+253b39f0-4293-8038-8ab4-d91495aa63c2
+
+# Marker Header Validation
+253b39f0-4293-8068-950f-d36f6fab4816
+
+# UK Biobank Feature Synonym Generation
+253b39f0-4293-80a8-bdd4-e37ae1ff8afd
+
+# Data Validation - Duplicate Rem
+253b39f0-4293-80b3-af36-d470b92804d6
+
+# Tagging 3
+253b39f0-4293-8004-85aa-f46cbd5e9d8b
+
+# Tagging 2
+252b39f0-4293-8024-b8af-d25a7d0d029a
+
+# Tagging
+251b39f0-4293-804a-8c87-dcdb7ab22c41
+
+# PDF to Markdown/JSON Conversion
+251b39f0-4293-8024-94e6-f8fbcfcc7118
+
+# PDF Metadata Matching
+251b39f0-4293-80de-9fb8-e7abd164f9ad
+
+# Untitled
+24fb39f0-4293-80d3-9988-d5bc4e9304a0
+
+# Final PDF Collection
+24eb39f0-4293-8082-a0f0-f6f9535c087b
+
+# PDF Retrieval (Continue)
+24eb39f0-4293-80d4-9d0b-e0c7b0bf32bc
+
+# PDF Retrieval
+24eb39f0-4293-8016-8966-f8b7797e4ff5
+
+# DOI Extraction
+24eb39f0-4293-802f-87bb-e829e0596d58
+
+# Project Notebook Discussion
+24fb39f0-4293-8086-95e5-ecad1d455868
+
+# Abruptly Cancelled
+24eb39f0-4293-80ec-8900-df222b6652a4
+
+# RAG Discussion
+24eb39f0-4293-805b-8e95-e65e3b35efef
+
+# Introduction and Research Proposal Discussion
+24db39f0-4293-8147-9858-d10a0c6fcb66
+
+# Refocus Research Question
+24db39f0-4293-8173-a4c2-fca1952b0e0f
+
+# Hypothsis Validation Options
+24db39f0-4293-810c-8c77-ff2103f1b8e3
+
+# PDF to Markdown/JSON Conversion
+253b39f0-4293-80c5-b8b0-ea8e94f3d212
+
+# PDF Download Pipeline
+251b39f0-4293-8078-93dc-e34a295787af
+
+# Run convert_pdfs.py
+251b39f0-4293-808f-b92f-cb9ad6e6a632
+
+# Database Creation
+251b39f0-4293-80b7-85b9-cf1c7a56a638
+
+# Untitled
+24fb39f0-4293-806f-83f0-e5ad2da28b37
+
+# Template
+24fb39f0-4293-8049-af56-c7f88863fafa
+
+# Benchmark Embedding Models for Phenotype Similarity
+24eb39f0-4293-80ab-bdaf-fba7e46fd646
+
+# Run convert_pdfs.py
+24eb39f0-4293-802e-80c4-f0f8efb099bc
+
+# Survey of Vector Database Management Systems
+24db39f0-4293-81c8-a841-edbbd6f5e0d3
+
+# UK Biobank: An Open Access Resource
+24db39f0-4293-813d-88cb-cdedfb49035d
+
+# Contextual Word Embedding for Biomedical Knowledge Extraction
+24db39f0-4293-8166-af9d-f959c3a7c708
+
+# The Monarch Initiative: Integrative Data Platform
+24db39f0-4293-812c-861f-e8f447464a11
+
+# Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks
+24db39f0-4293-81dd-a757-d30fb181f30b
+
+# test
+250b39f0-4293-80ae-9899-cd935fd81373
+
+# Convert UKB PDF to MD error 2
+250b39f0-4293-8006-bd90-e1737ab304b7
+
+# Error
+24fb39f0-4293-8011-bafd-e6fb827a7f51
+
+# UKB Source Metadata Infected
+24fb39f0-4293-8018-a83c-cfc3aaf39b92
+
+# Threadripper RAM Trouble (Continued)
+24eb39f0-4293-80d0-bfcb-cb317fc25839
+
+# Threadripper & AMD Trouble
+24eb39f0-4293-80da-8ba4-dfc4099480f9
+
+# Metadata Correction (Continued)
+24eb39f0-4293-8058-ab1c-fc3e083ba2c5
+
+# Metadata Correction
+24eb39f0-4293-80d3-b4c5-d85912a2e6bb
+
+# Convert UKB PDF to MD
+24eb39f0-4293-80f8-818a-d8900024a81b
+
+# Week 1 - Project Setup
+24db39f0-4293-8177-ac37-e7fc416193b5
+
+# RAG Pipeline Core
+24db39f0-4293-8156-a94f-fc184e5ad194
+
+# FAISS
+24db39f0-4293-81cd-81f0-cff67f38fe64
+
+# Weaviate
+24db39f0-4293-8152-9056-c76a8e81a6ad
+
+# Milvus
+24db39f0-4293-81ec-8476-d7aebe1a0425
+
+# PyTorch
+24db39f0-4293-8159-8dbc-cc72bd7201ba
+
+# Transformers
+24db39f0-4293-81ce-8629-e1aa48f8f229
+
+# LlamaIndex
+24db39f0-4293-81e4-bf61-eef940837246
+
+# LangChain
+24db39f0-4293-81cb-b919-c2cf136569b3
+
+# Python Runtime
+24db39f0-4293-81bb-83d3-ceb2a1259936
+
+# Docker Extension
+24db39f0-4293-81ad-ab78-e042d8b3d195
+
+# RooCode Extension
+24db39f0-4293-81ee-93b7-e8612de9ce75
+
+# VS Code
+24db39f0-4293-81e4-af4b-cb1fa5fa1c4f
+
+# Ubuntu Desktop
+24db39f0-4293-8114-8ae6-c26a384f17a4
+
+# Workstation 2 - Testing
+24db39f0-4293-81e6-b7c1-c1d88753580d
+
+# GPU - Workstation 1
+24db39f0-4293-81da-8c9b-cf2ea29be550
+
+# Workstation 1 - Development
+24db39f0-4293-8104-bf22-dc1d27541f6c
+
+# Synonym Generator Evaluation
+24eb39f0-4293-80d0-abdb-d90537f63c88
+
+# Synonym Generation Prompt for UK Biobank Fields
+24eb39f0-4293-80c4-87af-da730bcabcb2
+
+# — Followup
+24eb39f0-4293-80a4-b6e6-d05bd1825fd9
+
+# Understanding MD Feature Extraction: Journals
+24eb39f0-4293-80b5-bb47-e8e0d4f1b93b
+
+# Research Pages
+24db39f0-4293-81e0-9c04-e199eb136993
+
+# Project Overview
+24db39f0-4293-81a1-aea5-eeb8b6c9ab0c
+
+# Research Methods
+24db39f0-4293-81f9-bd92-cd02a89ee83b
+
+# Pipeline Architecture
+24db39f0-4293-811a-a260-c48f1dd1d0d5
+
+# # **REGULAR PAPER**
+24fb39f0-4293-81a4-a598-d81e8521bb28
+
+# # Docling: An Efficient Open-Source Toolkit for AI-driven Document Conversion
+24fb39f0-4293-8112-9dc8-e51cff3e44ae
+
+# # On the resemblance and containment of documents
+24fb39f0-4293-818d-a04b-e36a0e92c8df
+
+# ![](_page_0_Picture_0.jpeg)
+24fb39f0-4293-81fa-a07c-f76ec941ac5b
+
+# Jianguo Wang\*, Xiaomeng Yi, Rentong Guo, Hai Jin, Peng Xu, Shengjun Li, Xiangyu Wang, Xiangzhou Guo, Chengming Li, Xiaohai Xu, Kun Yu, Yuxing Yuan, Yinghao Zou, Jiquan Long, Yudong Cai, Zhenxiang Li, Zhifeng Zhang, Yihua Mo, Jun Gu, Ruiyi Jiang, Yi Wei, Charles Xie
+24fb39f0-4293-812e-bf8b-c72d58ebde25
+
+# Field-Weighted XML Retrieval Based on BM25
+24fb39f0-4293-8003-bf0c-cb88c40f6fe6
+
+# Progress Tracking
+24db39f0-4293-8118-99b4-cd413ebc3361
+
