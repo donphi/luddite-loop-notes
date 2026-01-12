@@ -1,0 +1,266 @@
+\section{Evaluation Breakdown}\label{evaluation-breakdown}
+
+\subsection{Content}\label{content}
+
+\subsection{1. Objective}\label{objective}
+
+The objective of this experimental block was to design, evaluate, and stress-test a scalable, GPU-accelerated document analysis workflow capable of transforming heterogeneous biomedical PDFs into structured, ontology-ready JSON. This study aimed to establish the architectural foundations for a production-grade, multi-pipeline system supporting disease tagging, feature extraction, and downstream hypothesis testing using the UK Biobank literature. This study was motivated by an early research question explored in a separate statistical analysis: whether UK Biobank research exhibits a stable core feature set across studies. The formal hypothesis and preliminary results are documented in Section 2.✅ Results and Reflection
+
+The work focused on:
+
+\begin{itemize}
+\tightlist
+\item
+  verifying whether multiple open-source models can be integrated deterministically without collapse at scale
+\item
+  identifying where extraction pipelines fail under real-world noise
+\item
+  establishing the design constraints for a future production-grade, multi-pipeline system
+\item
+  benchmarking GPU performance under sustained, multi-model workloads
+\end{itemize}
+
+This requires building a reproducible computational environment, unifying extraction standards, and designing the early stages of a continuous research pipeline.
+
+\subsection{2. Methods and Process Summary}\label{methods-and-process-summary}
+
+A 121-day iterative workflow was executed between 16 May 2025 and 14 September 2025 with 46 dedicated coding days and 188 hours of active development.16 May 202514 September 2025 The focus was rapid prototyping, architectural testing, model comparison, and stress-testing GPU workloads under real-world corpus noise.
+
+The process included:
+
+\begin{itemize}
+\item
+  multi-source PDF retrieval and metadata consolidation
+\item
+  PDF → Markdown/JSON conversion testing Surya OCR, Docling, Marker, PyMuPDF, and GROBID
+\item
+  evolution of a YAML-driven hyperparameter controls
+\item
+  multi-model section, header, and topic detection
+\item
+  large-scale NER testing (HunFlair2, PubTator3, BERN2, SciSpacy)
+\item
+  ontology audits across MONDO, MeSH, DOID, LOINC and HPO
+\item
+  early architecture choices for \emph{``token-spine''} alignment and model redundancy
+\item
+  evaluation of *RAG-related chunking constraints (sentence-level vs passage-level)
+
+  \begin{itemize}
+  \tightlist
+  \item
+    Retrieval Augmented Generation was initial considered but was eventually rejected
+  \end{itemize}
+\item
+  exploratory feature synonym generation via Elasticsearch
+\end{itemize}
+
+The activity timelines and metadata remain preserved in the structured table below (notes removed intentionally for academic clarity).
+
+💡 A token is the smallest unit of text identified by an Optical Character Recognition (OCR) system.token A token is typically a word (or word-like segment) paired with its exact bounding box coordinates on a page.token It is the atomic building block for reconstructing document structure.''
+
+💡 The token spine is a canonical, page-ordered sequence of all OCR tokens (with coordinates) that serves as a single source of truth for text content and layout. All downstream tasks, NER, ontology mapping, chunking, and section detection, anchor back to this spine to ensure deterministic alignment.
+
+\subsubsection{Time Analysis}\label{time-analysis}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}ll@{}}
+\toprule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\textbf{Metric} & \textbf{Value} \\
+\textbf{Experiment Duration} & 121 total days \\
+\textbf{Start Date} & 2025-05-16 (Thursday) \\
+\textbf{End Date} & 2025-09-14 (Friday) \\
+\textbf{Coding Duration} & 46 total days \\
+\textbf{Coding Start Date} & 2025-08-07 \\
+\textbf{Coding End Date} & 2025-09-14 \\
+\textbf{Screen Time} & 188 hours \\
+\textbf{Experiments Completed} & 24 \\
+\end{longtable}
+}
+
+The experiment began on 2025-05-16 and concluded on 2025-09-14, with concentrated coding work commencing from 2025-08-07.2025-05-162025-09-142025-08-07 The timeline below documents the iterative development of the pipeline, evolution of the extraction strategy, and emergence of stable design principles.2025-05-162025-09-142025-08-07
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+Untitled
+
+All internal notes were removed; the table represents the high-level progression of the experiment. See link belowlink for access to granular notes.
+
+https://fragrant-mapusaurus-1cb.notion.site/24db39f042938123a4a4c518037b63c2?v=24db39f0429381dc8e5b000cf4d04620\&source=copy\_link
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{3. Critical Reflection}\label{critical-reflection}
+
+This experiment exposed the full complexity of constructing a scalable scientific PDF pipeline capable of supporting downstream ontology-linked biomarker research. Several observations were consistent across the entire workflow.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  \textbf{Environmental determinism is non-negotiable.}
+
+  Models that work in an ad hoc environment fail under container orchestration unless the dependencies are locked and the CUDA stacks are uniform.
+\item
+  \textbf{The PDF structure is the primary bottleneck.}
+
+  The variability in layout, encoding, and OCR quality remains the dominant source of extraction errors, not the models themselves. A more structured pipeline and process must be considered.
+\item
+  \textbf{Single-model extraction was not viable.}
+
+  Marker, Docling, Surya, GROBID, and NER models each solve different failure modes. Reliability only emerges from the model-level redundancy. There is a need to examine the pros and cons of each model in the pipeline before construction.
+\item
+  \textbf{Journal Structure and Ontology normalisation require strict discipline.}
+
+  Without a unified ``token-spine'' and repeatable tagging logic, biomedical entity normalisation collapses at a large scale. Consider fine-tuning with SetFit, which is
+\item
+  \textbf{Scaling introduces new failure modes in the system.}
+
+  Techniques that work on 100 PDFs fail when pushed to thousands due to the index size, chunk explosion, and GPU memory constraints.
+\item
+  \textbf{The pipeline is now mature enough to be formalised into three continuous research pipelines.}
+
+  The experiment revealed the boundaries of feasibility and motivated the development of a modular pipeline architecture.
+\end{enumerate}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{4. Next Steps and Implementation Plan}\label{next-steps-and-implementation-plan}
+
+The next phase formalises the system into three continuous, validated pipelines, each architected for reproducibility and large-scale processing.
+
+\subsubsection{4.1 Pipeline: PDF → Clean JSON (Canonical Extraction Pipeline)}\label{pipeline-pdf-clean-json-canonical-extraction-pipeline}
+
+Goal: Produce a deterministic JSON representation of every paper backed by the ALTO XML ``token spine.
+
+Stages:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  PDF ingestion → Surya OCR + ALTO XML
+\item
+  Multi-model structure detection (Marker, Docling, GROBID, Layout cues)
+\item
+  Markdown + JSON formation
+\item
+  End-to-end validation:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    header structure
+  \item
+    section ordering
+  \item
+    table/figure detection
+  \item
+    text continuity
+  \item
+    metadata consistency
+  \end{itemize}
+\end{enumerate}
+
+Outcome: A stable, compressed, ontology-ready JSON dataset was stored in a columnar database.
+
+\subsubsection{\texorpdfstring{\textbf{4.2 Pipeline 2: Clean JSON → NER \& Disease Ontology Mapping}}{4.2 Pipeline 2: Clean JSON → NER \& Disease Ontology Mapping}}\label{pipeline-2-clean-json-ner-disease-ontology-mapping}
+
+Goal: Apply multiple biomedical NER models to every sentence to assign ontology IDs.
+
+Stages:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Sentence-level chunking (atomic spans)
+\item
+  Run 3 disease NER models (e.g., BERN2, HunFlair2, MedCAT)
+\item
+  Voting system: 3-way witness, no ties
+\item
+  Mapping to MONDO, HPO, MeSH, SNOMED, DOID (Possibly only DOID as time pressured)
+\item
+  Validation:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    inter-model agreement
+  \item
+    ontology ID coverage
+  \item
+    unresolved entities flagged
+  \end{itemize}
+\end{enumerate}
+
+Outcome: A disease-entity dataset supporting phenotype clustering, biomarker linkage, and ontology-driven hypothesis generation.
+
+\subsubsection{\texorpdfstring{\textbf{4.3 Pipeline 3: Clean JSON → Feature Extraction (Keywords, Synonyms, Metadata)}}{4.3 Pipeline 3: Clean JSON → Feature Extraction (Keywords, Synonyms, Metadata)}}\label{pipeline-3-clean-json-feature-extraction-keywords-synonyms-metadata}
+
+Goal: Extract every feature relevant to the UK Biobank modelling.
+
+Stages:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Elasticsearch synonym expansion
+\item
+  Reverse indexing for field detection
+\item
+  Additional NLP models for non-disease entities
+\item
+  Mapping to UKB field IDs
+\item
+  Validation:
+
+  \begin{itemize}
+  \tightlist
+  \item
+    duplicate features
+  \item
+    false positives/negatives
+  \item
+    feature frequency distribution
+  \end{itemize}
+\end{enumerate}
+
+Outcome: A harmonised feature dataset enabling scalable hypothesis testing and cross-paper feature overlap analysis.
+
+\subsubsection{\texorpdfstring{\textbf{4.4 Final Statistical Pipeline (Cross-Pipeline Output)}}{4.4 Final Statistical Pipeline (Cross-Pipeline Output)}}\label{final-statistical-pipeline-cross-pipeline-output}
+
+Goal: To determine whether 10,000 initial UK Biobank features reduce to stable, repeatedly selected subsets.
+
+Tools:
+
+\begin{itemize}
+\tightlist
+\item
+  Bootstrapping
+\item
+  Stability selection
+\item
+  Mutual information
+\item
+  Sparse logistic regression
+\item
+  Cluster analysis of ontology-normalised features
+\end{itemize}
+
+Deliverables:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Feature stability curves
+\item
+  Rank-ordered feature lists
+\item
+  Evidence of convergent feature selection across models and papers
+\end{enumerate}

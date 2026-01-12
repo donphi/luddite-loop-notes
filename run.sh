@@ -165,6 +165,178 @@ n2m.setCustomTransformer('callout', async (block) => {
   return icon ? \`\${icon} \${text}\\n\` : text + '\\n';
 });
 
+// ---------- TABLES: deterministic HTML emitter (Pandoc-friendly) ----------
+const DEBUG_TABLES = process.env.DEBUG_TABLES === '1' || process.env.DEBUG_TABLES === 'true';
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function renderRichTextPieceToHtml(rt) {
+  if (!rt) return '';
+
+  let text = '';
+  if (rt.type === 'text') text = (rt.text && rt.text.content) ? rt.text.content : (rt.plain_text || '');
+  else if (rt.type === 'equation') text = (rt.equation && rt.equation.expression) ? rt.equation.expression : (rt.plain_text || '');
+  else text = rt.plain_text || '';
+
+  let html = escapeHtml(text).replace(/\\n/g, '<br />');
+
+  const href = rt.href;
+  if (href) {
+    html = '<a href=\"' + escapeHtml(href) + '\">' + html + '</a>';
+  }
+
+  const ann = rt.annotations || {};
+  if (ann.code) html = '<code>' + html + '</code>';
+  if (ann.bold) html = '<strong>' + html + '</strong>';
+  if (ann.italic) html = '<em>' + html + '</em>';
+  if (ann.strikethrough) html = '<del>' + html + '</del>';
+  if (ann.underline) html = '<u>' + html + '</u>';
+
+  return html;
+}
+
+function renderCellToHtml(cellRichTextArray) {
+  const parts = Array.isArray(cellRichTextArray) ? cellRichTextArray : [];
+  return parts.map(renderRichTextPieceToHtml).join('');
+}
+
+async function listAllChildren(blockId) {
+  const out = [];
+  let cursor = undefined;
+  while (true) {
+    const resp = await notion.blocks.children.list({
+      block_id: blockId,
+      page_size: 100,
+      start_cursor: cursor,
+    });
+    out.push(...resp.results);
+    if (!resp.has_more) break;
+    cursor = resp.next_cursor;
+  }
+  return out;
+}
+
+// Override Notion "table" blocks: emit raw HTML table so Pandoc -> LaTeX is stable
+n2m.setCustomTransformer('table', async (block) => {
+  const rows = await listAllChildren(block.id);
+  const firstRow = rows.find(r => r.type === 'table_row');
+  if (DEBUG_TABLES && firstRow) {
+    console.error('DEBUG_TABLE_BLOCK:', JSON.stringify({ id: block.id, table: block.table }, null, 2));
+    console.error('DEBUG_TABLE_FIRST_ROW_JSON:', JSON.stringify(firstRow, null, 2));
+  }
+
+  const hasColHeader = !!(block.table && block.table.has_column_header);
+  const hasRowHeader = !!(block.table && block.table.has_row_header);
+
+  const parsedRows = rows
+    .filter(r => r.type === 'table_row')
+    .map(r => (r.table_row && r.table_row.cells ? r.table_row.cells : []).map(cell => renderCellToHtml(cell)));
+
+  if (parsedRows.length === 0) return '';
+
+  const maxCols = Math.max.apply(null, parsedRows.map(r => r.length));
+  const norm = parsedRows.map(r => {
+    const rr = r.slice();
+    while (rr.length < maxCols) rr.push('');
+    return rr;
+  });
+
+  const thead = hasColHeader ? norm[0] : null;
+  const tbody = hasColHeader ? norm.slice(1) : norm;
+
+  let html = '\\n<table>\\n';
+  if (thead) {
+    html += '  <thead>\\n    <tr>\\n';
+    thead.forEach((c) => {
+      html += '      <th>' + c + '</th>\\n';
+    });
+    html += '    </tr>\\n  </thead>\\n';
+  }
+  html += '  <tbody>\\n';
+  tbody.forEach((r) => {
+    html += '    <tr>\\n';
+    r.forEach((c, j) => {
+      if (hasRowHeader && j === 0) html += '      <th scope=\"row\">' + c + '</th>\\n';
+      else html += '      <td>' + c + '</td>\\n';
+    });
+    html += '    </tr>\\n';
+  });
+  html += '  </tbody>\\n</table>\\n';
+  return html;
+});
+
+// Prevent row blocks from being rendered separately (avoid duplicates)
+n2m.setCustomTransformer('table_row', async () => '');
+
+// ---------- CODE BLOCKS: preserve ASCII diagrams + optional bold/emojis ----------
+function looksLikeAsciiDiagram(s) {
+  const str = String(s || '');
+  if (/[\u2500-\u257F\u2580-\u259F\u25A0-\u25FF\u2190-\u21FF\u2600-\u26FF\u2700-\u27BF]/u.test(str)) {
+    return true;
+  }
+  return /(<==>|<->|==>|<==|->|<-|\|->|<-\\|)/.test(str);
+}
+
+function escapeLatexForFancyVerbatimCommandchars(s) {
+  return String(s)
+    .replace(/\\\\/g, '\\\\textbackslash{}')
+    .replace(/\\{/g, '\\\\textbraceleft{}')
+    .replace(/\\}/g, '\\\\textbraceright{}');
+}
+
+function renderRichTextArrayToPlainText(richTextArray) {
+  const parts = Array.isArray(richTextArray) ? richTextArray : [];
+  return parts.map(rt => String((rt && rt.plain_text) ? rt.plain_text : '').normalize('NFC')).join('');
+}
+
+function renderRichTextArrayToPandocDiagramBlocks(richTextArray) {
+  const parts = Array.isArray(richTextArray) ? richTextArray : [];
+
+  const htmlInner = parts.map(rt => {
+    const text = String((rt && rt.plain_text) ? rt.plain_text : '').normalize('NFC');
+    const escaped = escapeHtml(text);
+    if (rt && rt.annotations && rt.annotations.bold) return '<strong>' + escaped + '</strong>';
+    return escaped;
+  }).join('');
+
+  const latexInner = parts.map(rt => {
+    const text = String((rt && rt.plain_text) ? rt.plain_text : '').normalize('NFC');
+    const escaped = escapeLatexForFancyVerbatimCommandchars(text);
+    if (rt && rt.annotations && rt.annotations.bold) return '\\\\textbf{' + escaped + '}';
+    return escaped;
+  }).join('');
+
+  const htmlBlock = '<pre class=\"notion-ascii-diagram\"><code>' + htmlInner + '</code></pre>';
+  const latexBlock =
+'\\\\begin{Verbatim}[commandchars=\\\\\\\\\\\\{\\\\}]\\n' +
+latexInner + '\\n' +
+'\\\\end{Verbatim}';
+
+  // IMPORTANT: this JS runs inside run.sh's node -e payload (bash double-quotes).
+  // Use Pandoc's alternative fence ~~~ (avoid backticks).
+  return '\\n\\n~~~{=html}\\n' + htmlBlock + '\\n~~~\\n\\n~~~{=latex}\\n' + latexBlock + '\\n~~~\\n\\n';
+}
+
+n2m.setCustomTransformer('code', async (block) => {
+  const lang = ((block.code && block.code.language) ? block.code.language : '').toLowerCase();
+  const rich = (block.code && block.code.rich_text) ? block.code.rich_text : [];
+  const plain = renderRichTextArrayToPlainText(rich);
+
+  const isDiagram = lang === 'plain text' || lang === 'text' || lang === 'plain' || looksLikeAsciiDiagram(plain);
+  if (isDiagram) return renderRichTextArrayToPandocDiagramBlocks(rich);
+
+  const fenceLang = lang && lang !== 'plain text' ? lang : '';
+  const fence = fenceLang ? '~~~' + fenceLang : '~~~';
+  return '\\n\\n' + fence + '\\n' + plain + '\\n~~~\\n\\n';
+});
+
 // Build a lookup table for all pages
 const pageIdToTitle = {};
 
@@ -461,6 +633,13 @@ function formatDatabaseProperties(dbName, pageInfo, entryNumber) {
 // Create markdown content with custom formatting
 async function createCustomMarkdown(pageId, pageInfo, dbName, entryNumber) {
   let content = '';
+
+  function stripExportArtifacts(s) {
+    return String(s || '')
+      .replace(/^\\s*\\*\\*Generated:\\*\\*.*(?:\\r?\\n)?/gmi, '')
+      .replace(/^\\s*\\*\\*Config:\\*\\*.*(?:\\r?\\n)?/gmi, '')
+      .replace(/^\\s*Generated:\\s*.*(?:\\r?\\n)?/gmi, '');
+  }
   
   // Add custom formatted properties for database items
   if (pageInfo.parentType === 'database_id' && dbName) {
@@ -480,7 +659,7 @@ async function createCustomMarkdown(pageId, pageInfo, dbName, entryNumber) {
     
     if (mdString.parent) {
       // The parent string includes all content with images and emojis preserved
-      content += mdString.parent;
+      content += stripExportArtifacts(mdString.parent);
       
       // If there are child pages, add them too
       if (mdString.children && mdString.children.length > 0) {
@@ -496,7 +675,7 @@ async function createCustomMarkdown(pageId, pageInfo, dbName, entryNumber) {
     content += \`*Error retrieving content: \${error.message}*\`;
   }
   
-  return content;
+  return stripExportArtifacts(content);
 }
 
 // Create database overview table with ALL columns dynamically
